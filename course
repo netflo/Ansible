@@ -1,0 +1,32 @@
+
+self sufficiency:
+ansible-doc -l
+ansible-doc aws_s3
+
+
+#example of cisco+EOS mix in the same playbook with  info extraction:
+
+---
+- name: GATHER INFORMATION FROM ROUTERS
+  hosts: cisco
+  connection: network_cli                             <=== for network devices
+  gather_facts: no                                    <=== no point on network devices
+
+  tasks:
+     - name: My router facts
+       ios_facts:
+       when: ansible_network_os == 'ios'               <=== real gathering of network facts when ios
+
+     - name: My router facts
+       eos_facts:
+       when: ansible_network_os == 'eos'
+
+     - name: DISPLAY VERSION
+       debug:
+         msg: "the IOS version is {{ansible_net_version}}"
+
+     - name: DISPLAY SERIAL NUM
+       debug:
+         msg: "the serial number is is {{ansible_net_serialnum}}"
+
+
