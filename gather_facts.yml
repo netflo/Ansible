@@ -1,0 +1,49 @@
+---
+- name: GATHER INFORMATION FROM ROUTERS
+  hosts: cisco
+  connection: network_cli
+  gather_facts: no
+
+  tasks:
+     - name: My router facts
+       ios_facts:
+       when: ansible_network_os == 'ios'
+
+#      comment goes here
+#      modules to be used are just after the task name
+
+     - name: My router facts
+       eos_facts:
+       when: ansible_network_os == 'eos'
+
+     - name: DISPLAY VERSION
+       debug:
+         msg: "the IOS version is {{ansible_net_version}}"
+
+     - name: DISPLAY SERIAL NUM
+       debug:
+         msg: "the serial number is is {{ansible_net_serialnum}}"
+
+
+     - name: Output of show commands
+       ios_command:
+          commands:
+           - show run | inc hostname
+           - show ip int brief
+#adding a tag allows to be selective when running a task from the CLI with  --tags show
+       tags: show
+#      With the ios_facts module, the output was automatically assigned to the ansible_* variables. For any of the ad-hoc commands we run against remote devi
+ces, the output has to be "registered" to a variable in order to use it within the playbook.
+       register: my_show_output
+
+     - name: DISPLAY THE COMMAND OUTPUT
+       debug:
+         var: my_show_output
+       tags: show
+
+#the following task parses the variable to clean up the output
+     - name: DISPLAY THE HOSTNAME
+       debug:
+#[0] refers to the first output e.g. show run | inc hostname
+         msg: "The hostname is {{ my_show_output.stdout[0] }}"
+       tags: show
