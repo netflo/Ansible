@@ -1,0 +1,26 @@
+---
+- name: SNMP RO/RW STRING CONFIGURATION
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+
+    - name: ENSURE THAT THE DESIRED SNMP STRINGS ARE PRESENT
+      ios_config:
+        commands:
+          - snmp-server community ansible-public RO
+          - snmp-server community ansible-public2 RO
+          - snmp-server community ansible-private RW
+
+
+- name: SNMP RO/RW STRING CONFIGURATION
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: ENSURE THAT ROUTERS ARE SECURE
+      ios_config:
+## src means the genuine Cisco configuration are taken from a file
+        src: secure_router.cfg
