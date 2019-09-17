@@ -30,3 +30,8 @@ ansible-doc aws_s3
          msg: "the serial number is is {{ansible_net_serialnum}}"
 
 
+
+
+#Also:  --Check with find out if a change was to be madde  and  -v will tell you what 
+
+$ ansible-playbook -i cisco_inventory router_configs.yml --check -v
