@@ -1,0 +1,67 @@
+---
+
+#Most CLI based network devices support show commands. The output of the commands are "pretty" formatted, in the sense that they are very human readable. However, in the context of automation, where the objective is for a machine(code) to interpret this output, it needs to be transformed into "structured" data. In other words data-types that the code/machine can interpret and navigate. Examples would be lists, dictionaries, arrays and so on.
+
+#The Ansible network-engine is a role that supports 2 such "translators" - command_parser and textfsm_parser. These are modules built into the network-engine role that takes a raw text input (pretty formatted) and converts it into structured data. You will work with each of these to generate dynamic reports in the following sections:
+
+#exmaple focusing on interfaces and picking up MTU, interfaces UP and description
+
+- name: GENERATE INTERFACE REPORT
+  hosts: cisco
+  gather_facts: no
+  connection: network_cli
+
+#Next add the ansible-network.network-engine role into the playbook. Roles are nothing but a higher level playbook abstraction. Think of them as pre-written playbooks that handle repeated, specific tasks. For this we will need to first install the role. Execute the following command on the control node to install this role:
+
+#this is done with:  ansible-galaxy install ansible-network.network-engine
+
+#The ansible-network.network-engine role specifically makes available the command_parser module, among other things, which you can then use in subsequent tasks inside your own playbook.
+
+  roles:
+    - ansible-network.network-engine
+
+#Now we can begin adding our tasks. Add the first task to run the show interfaces command against all the routers and register the output into a variable.
+
+  tasks:
+    - name: CAPTURE SHOW INTERFACES
+      ios_command:
+        commands:
+          - show interfaces
+      register: output
+
+#The next task is to send the raw data returned in the previous task to the command_parser module. This module takes the raw content as one of the inputs along with the name of the parser file.
+#Note: The parser file is a YAML file that has a similar structure to Ansible playbooks.
+
+    - name: PARSE THE RAW OUTPUT
+      command_parser:
+        file: "parsers/show_interfaces.yaml"
+        content: "{{ output.stdout[0] }}"
+
+#note the parser show_interfaces can be obtained from:  https://github.com/pharriso/uk_ansible_workshop/blob/master/exercises/networking_v2/parsers/show_interfaces.yaml
+#also there are the following: https://github.com/pharriso/uk_ansible_workshop/blob/master/exercises/networking_v2/parsers/show_ip_route.template
+#or: https://github.com/pharriso/uk_ansible_workshop/blob/master/exercises/networking_v2/parsers/show_ip_interfaces.yaml
+
+#Let's understand this task in a little more depth. The command_parser is referencing a file called show_interfaces.yaml within the parsers directory. For this lab, the parser has been pre-populated for you. The parsers are written to handle the output from standard show commands on various network platforms.
+
+#More parsers are being made available in the public domain so you will only have to build them if a specific use case has not been handled.
+
+#Feel free to view the contents of the parser file. You will notice how it uses regular expressions to capture relevant data from the show command and return it as a variable called interface_facts
+
+#Add a new task to view the contents being returned by the command_parser
+
+
+    - name: DISPLAY THE PARSED DATA
+      debug:
+        var: interface_facts
+
+    - name: GENERATE REPORT FRAGMENTS
+      template:
+        src: interface_facts.j2
+        dest: intf_reports/{{inventory_hostname}}_intf_report.md
+
+    - name: GENERATE A CONSOLIDATED REPORT
+      assemble:
+        src: intf_reports/
+        dest: interfaces_report.md
+      delegate_to: localhost
+      run_once: yes
