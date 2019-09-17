@@ -1,0 +1,22 @@
+---
+- name: RESTORE CONFIGURATION
+  hosts: cisco
+  connection: network_cli
+  gather_facts: no
+
+#this restore use the net_put Ansible module to copy the config backup to the routers. This requires the scp python module. We need to install that first:  sudo pip install python-scp followed by sudo pip install scp
+
+  tasks:
+    - name: COPY RUNNING CONFIG TO ROUTER
+      net_put:
+        src: ./backup/{{inventory_hostname}}.config
+        dest: flash:/{{inventory_hostname}}.config
+      vars:
+        ansible_command_timeout: 120
+
+    - name: CONFIG REPLACE
+      ios_command:
+        commands:
+          - config replace flash:{{inventory_hostname}}.config force
+
+#the writter of ios_command module used cisco' ARCHIVE feature so The config replace will only update the differences to the router and not really a full config replace.
